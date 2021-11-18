@@ -128,8 +128,15 @@ public class jd_speed_signfaker extends abstract_jd_task {
     try {
       String res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
       JsonNode jsonNode = objectMapper.readTree(res);
-
+     //data.code ===0 && data.data && data.data.finished
+      long code = jsonNode.get("code").asLong();
+      if (code == 0 && !jsonNode.get("data").isNull() && jsonNode.get("data").get("finished").asBoolean()) {
+        System.out.println("任务完成");
+      } else {
+        System.out.println("执行任务结果: "+res);
+      }
     } catch (Exception e) {
+      System.out.println("执行任务异常: "+e.getMessage());
       e.printStackTrace();
     }
   }
