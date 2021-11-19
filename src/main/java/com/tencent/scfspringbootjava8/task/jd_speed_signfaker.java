@@ -37,7 +37,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
   @Scheduled(cron = "21 3,8 * * * ?")
   @Override
   public void start() {
-    bathExex(config.getList());
+    bathExec(config.getList());
   }
 
   @Override

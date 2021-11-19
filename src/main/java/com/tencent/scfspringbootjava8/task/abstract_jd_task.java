@@ -18,7 +18,7 @@ public abstract class abstract_jd_task {
 
   public abstract void exec(String cookie);
 
-  public void bathExex(List<String> cookies) {
+  public void bathExec(List<String> cookies) {
     for (String cookie : cookies) {
       if (StringUtils.hasLength(cookie)) {
         exec(cookie);

@@ -37,7 +37,7 @@ public class jd_speed_redpocke extends abstract_jd_task {
   @Scheduled(cron = "20 0,22 * * * ?")
   @Override
   public void start() {
-    bathExex(config.getList());
+    bathExec(config.getList());
   }
 
   @Override
