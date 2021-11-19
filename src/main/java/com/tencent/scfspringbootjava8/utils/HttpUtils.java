@@ -158,10 +158,13 @@ public class HttpUtils {
   /**
    * 发送 POST 请求（HTTP），不带输入数据
    *
+   *
+   * @param url
    * @param apiUrl
+   * @param headers
    * @return
    */
-  public static String doPost(String apiUrl) {
+  public static String doPost(String url, String apiUrl, HashMap<String, String> headers) {
     return doPost(apiUrl, new HashMap<String, Object>());
   }
 

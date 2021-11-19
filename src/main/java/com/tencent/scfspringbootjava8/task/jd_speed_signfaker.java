@@ -42,7 +42,23 @@ public class jd_speed_signfaker extends abstract_jd_task {
 
   @Override
   public void exec(String cookie) {
+    try {
+      //TODO
+      //richManIndex()
+      wheelsHome(cookie);
+      apTaskList(cookie);
+      wheelsHome(cookie);
 
+      invite(cookie);
+      invite2(cookie);
+
+      //taskList()
+      //queryJoy()
+      //cash()
+    } catch (Exception e) {
+      e.printStackTrace();
+
+    }
   }
 
   // 大转盘
@@ -113,7 +129,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
             long id = next.get("id").asLong();
             String taskSourceUrl = next.get("taskSourceUrl").asText();
             //做任务
-            apDoTask(taskType, id, 4, taskSourceUrl,cookie);
+            apDoTask(taskType, id, 4, taskSourceUrl, cookie);
           }
         }
       }
@@ -122,21 +138,78 @@ public class jd_speed_signfaker extends abstract_jd_task {
     }
   }
 
+  public void invite(String cookie) {
+    long t = System.currentTimeMillis();
+    String[] inviterIdArr = {"5V7vHE23qh2EkdBHXRFDuA==",
+      "4AVQao+eH8Q8kvmXnWmkG8ef/fNr5fdejnD9+9Ugbec=",
+      "jbGBRBPo5DmwB9ntTCSVOGXuh1YQyccCuZpWwb3PlIc=",
+      "wXX9SjXOdYMWe5Ru/1+x9A==",
+      "mCvmrmFghpDCLcL3VZs53BkAhucziHAYn3HhPmURJJE=",
+      "E9EvSFNuA1pahSQT0uSsXkW1v0j+QOHQbk8+peJYc0I=",
+      "zPiP6uq7hi9AS7VecMnRvA==",
+      "YQ5wwbSWDzNIudDC2OWvSw==",
+      "+vbK7QKOtpHM4dsSRqUPPX/11g/P71iBYh46dyiMuKk=",
+      "w22w0sZEccp/OWxg1d20RtsryQGfghc94PsLIBqeX0E=",
+      "VdDrieI4oR6XwchWlxwfCQqEf6/k8cYvTG52R1ToSoQ=",
+      "D7QE/1ouU1wA14mAV0zGMg=="};
+    String inviterId = inviterIdArr[(int) Math.floor(Math.random() * inviterIdArr.length)];
+    String url = "https://api.m.jd.com/?t=" + t;
+    String body = "{\"method\":\"attendInviteActivity\",\"data\":{\"inviterPin\":\"" + inviterId + "\",\"channel\":1,\"token\":\"\",\"frontendInitStatus\":\"\"}}";
+    body = "functionId=InviteFriendChangeAssertsService&body=" + URLEncoder.encode(body) + "&referer=-1&eid=eidI9b2981202fsec83iRW1nTsOVzCocWda3YHPN471AY78%2FQBhYbXeWtdg%2F3TCtVTMrE1JjM8Sqt8f2TqF1Z5P%2FRPGlzA1dERP0Z5bLWdq5N5B2VbBO&aid=&client=ios&clientVersion=14.4.2&networkType=wifi&fp=-1&uuid=ab048084b47df24880613326feffdf7eee471488&osVersion=14.4.2&d_brand=iPhone&d_model=iPhone10,2&agent=-1&pageClickKey=-1&platform=3&lang=zh_CN&appid=market-task-h5&_t=" + t;
+    HashMap<String, String> headers = new HashMap<>(16);
+    headers.put("Host", "api.m.jd.com");
+    headers.put("Accept", "application/json, text/plain, */*");
+    headers.put("Content-Type", "application/x-www-form-urlencoded");
+    headers.put("Origin", "https://invite-reward.jd.com");
+    headers.put("Accept-Language", "zh-Hans-CN;q=1,en-CN;q=0.9");
+    headers.put("User-Agent", UserAgentUtils.randomUserAgent());
+    headers.put("Referer", "https://invite-reward.jd.com/");
+    headers.put("Accept-Encoding", "gzip, deflate, br");
+    headers.put("Cookie", cookie);
+    String res = HttpUtils.doPost(url, headers, body);
+    System.out.println(res);
+  }
+
+  public void invite2(String cookie) {
+    long t = System.currentTimeMillis();
+    String[] inviterIdArr = {"5V7vHE23qh2EkdBHXRFDuA==",
+      "wXX9SjXOdYMWe5Ru/1+x9A==",
+      "mCvmrmFghpDCLcL3VZs53BkAhucziHAYn3HhPmURJJE=",
+      "4AVQao+eH8Q8kvmXnWmkG8ef/fNr5fdejnD9+9Ugbec=",
+      "jbGBRBPo5DmwB9ntTCSVOGXuh1YQyccCuZpWwb3PlIc="};
+    String inviterId = inviterIdArr[(int) Math.floor(Math.random() * inviterIdArr.length)];
+    String url = "https://api.m.jd.com/";
+    String body = "{\"method\":\"participateInviteTask\",\"data\":{\"channel\":\"1\",\"encryptionInviterPin\":\"" + inviterId + "\",\"type\":1}}";
+    body = "functionId=TaskInviteService&body=" + URLEncoder.encode(body) + "&appid=market-task-h5&uuid=&_t=" + t;
+    HashMap<String, String> headers = new HashMap<>(16);
+    headers.put("Host", "api.m.jd.com");
+    headers.put("Accept", "application/json, text/plain, */*");
+    headers.put("Content-Type", "application/x-www-form-urlencoded");
+    headers.put("Origin", "https://gray.jd.com");
+    headers.put("Accept-Language", "zh-CN,zh-Hans;q=0.9");
+    headers.put("User-Agent", UserAgentUtils.randomUserAgent());
+    headers.put("Referer", "https://gray.jd.com/");
+    headers.put("Accept-Encoding", "gzip, deflate, br");
+    headers.put("Cookie", cookie);
+    String res = HttpUtils.doPost(url, headers, body);
+    System.out.println(res);
+  }
+
   private void apDoTask(String taskType, long id, int i, String taskSourceUrl, String cookie) {
     String body = "{\"linkId\":\"toxw9c5sy9xllGBr3QFdYg\",\"taskType\":\"" + taskType + "\",\"taskId\":" + id + ",\"channel\":" + i + ",\"itemId\":\"" + taskSourceUrl + "\"}";
     Map<String, Object> request = taskGetUrl("apDoTask", URLEncoder.encode(body), cookie);
     try {
       String res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
       JsonNode jsonNode = objectMapper.readTree(res);
-     //data.code ===0 && data.data && data.data.finished
+      //data.code ===0 && data.data && data.data.finished
       long code = jsonNode.get("code").asLong();
       if (code == 0 && !jsonNode.get("data").isNull() && jsonNode.get("data").get("finished").asBoolean()) {
         System.out.println("任务完成");
       } else {
-        System.out.println("执行任务结果: "+res);
+        System.out.println("执行任务结果: " + res);
       }
     } catch (Exception e) {
-      System.out.println("执行任务异常: "+e.getMessage());
+      System.out.println("执行任务异常: " + e.getMessage());
       e.printStackTrace();
     }
   }

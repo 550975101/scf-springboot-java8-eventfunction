@@ -1,5 +1,6 @@
 package com.tencent.scfspringbootjava8;
 
+import com.tencent.scfspringbootjava8.task.jd_fruit;
 import com.tencent.scfspringbootjava8.task.jd_speed_redpocke;
 import com.tencent.scfspringbootjava8.task.jd_speed_signfaker;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,9 @@ class ScfSpringbootJava8ApplicationTests {
 	@Autowired
 	jd_speed_signfaker jd_speed_signfaker;
 
+	@Autowired
+	jd_fruit jd_fruit;
+
 	@Test
 	void contextLoads() {
 //		jd_speed_redpocke.invite("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
@@ -27,7 +31,11 @@ class ScfSpringbootJava8ApplicationTests {
 //		jd_speed_redpocke.getPacketList("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 //		jd_speed_redpocke.signPrizeDetailList("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 //		jd_speed_signfaker.wheelsHome("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
-		jd_speed_signfaker.apTaskList("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+//		jd_speed_signfaker.invite("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+//		jd_speed_signfaker.invite2("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+//		jd_speed_signfaker.apTaskList("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+//		jd_fruit.initForFarm("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+		jd_fruit.taskInitForFarm("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 	}
 
 }
