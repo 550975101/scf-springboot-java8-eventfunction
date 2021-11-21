@@ -1,18 +1,19 @@
 package com.tencent.scfspringbootjava8.task;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tencent.scfspringbootjava8.config.CookieConfig;
 import com.tencent.scfspringbootjava8.utils.HttpUtils;
+import com.tencent.scfspringbootjava8.utils.TaskFlag;
 import com.tencent.scfspringbootjava8.utils.UserAgentUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author by 封心
@@ -29,8 +30,13 @@ public class jd_fruit extends abstract_jd_task {
 
     static ObjectMapper objectMapper = new ObjectMapper();
 
+    Map<String, String> shareCodeMap = new ConcurrentHashMap<>();
+
     @Autowired
     public CookieConfig config;
+
+    ////农场使用水滴换豆卡(如果出现限时活动时100g水换20豆,此时比浇水划算,推荐换豆),true表示换豆(不浇水),false表示不换豆(继续浇水),脚本默认是浇水
+    Boolean jdFruitBeanCard = false;
 
 
     @Scheduled(cron = "5 6-18/6 * * * ?")
@@ -52,6 +58,8 @@ public class jd_fruit extends abstract_jd_task {
             System.out.println("水果名称: " + fruitName);
             String shareCode = jsonNode.get("farmUserPro").get("shareCode").asText();
             System.out.println("助力码: " + shareCode);
+            System.out.println("将助力码添加至助力池: ");
+            shareCodeMap.put(cookie, shareCode);
             long winTimes = jsonNode.get("farmUserPro").get("winTimes").asLong();
             System.out.println("已成功兑换水果: " + winTimes);
             masterHelpShare(jsonNode);
@@ -65,7 +73,139 @@ public class jd_fruit extends abstract_jd_task {
             }
             //TODO
             doDailyTask(jsonNode, cookie);
+            //浇水10次
+            doTenWater(cookie);
+            //领取首次浇水奖励
+            getFirstWaterAward(cookie);
         }
+    }
+
+    public void getFirstWaterAward(String cookie) {
+        JsonNode farmTask = taskInitForFarm(cookie);
+    }
+
+    //// 查询背包道具卡API
+    public void doTenWater(String cookie) {
+        JsonNode myCardInfoRes = myCardInfoForFarm(cookie);
+        long fastCard = myCardInfoRes.get("fastCard").asLong();
+        long doubleCard = myCardInfoRes.get("doubleCard").asLong();
+        long beanCard = myCardInfoRes.get("beanCard").asLong();
+        long signCard = myCardInfoRes.get("signCard").asLong();
+        if (jdFruitBeanCard == true && myCardInfoRes.toString().contains("限时翻倍") && beanCard > 0) {
+            System.out.println("您设置的是使用水滴换豆卡，且背包有水滴换豆卡" + beanCard + "张, 跳过10次浇水任务");
+            return;
+        }
+        JsonNode farmTask = taskInitForFarm(cookie);
+        long totalWaterTaskTimes = farmTask.get("totalWaterTaskInit").get("totalWaterTaskTimes").asLong();
+        long totalWaterTaskLimit = farmTask.get("totalWaterTaskInit").get("totalWaterTaskLimit").asLong();
+        if (totalWaterTaskTimes < totalWaterTaskLimit) {
+            System.out.println("准备浇水10次");
+            long waterCount = 0;
+            TaskFlag taskFlag = new TaskFlag();
+            taskFlag.setFlag(false);
+            long times = totalWaterTaskLimit - totalWaterTaskTimes;
+            for (long i = 0; i < times; i++) {
+                System.out.println("开始第" + i + "次浇水");
+                JsonNode waterResult = waterGoodForFarm(cookie);
+                System.out.println("本次浇水结果" + waterResult);
+                String code = waterResult.get("code").asText();
+                if ("0".equals(code)) {
+                    System.out.println("剩余水滴" + waterResult.get("totalEnergy").asLong() + "");
+                    boolean finished = waterResult.get("finished").asBoolean();
+                    if (finished) {
+                        taskFlag.setFlag(true);
+                        break;
+                    } else {
+                        long totalEnergy = waterResult.get("totalEnergy").asLong();
+                        if (totalEnergy < 10) {
+                            System.out.println("水滴不够，结束浇水");
+                            break;
+                        }
+                        //领取阶段性水滴奖励
+                        gotStageAward(waterResult, cookie);
+                    }
+                } else {
+                    System.out.println("浇水出现失败异常,跳出不在继续浇水");
+                    break;
+                }
+            }
+            if (taskFlag.getFlag()) {
+                System.out.println("任务完成");
+            }
+        } else {
+            System.out.println("今日已完成10次浇水任务");
+        }
+    }
+
+    ////领取阶段性水滴奖励
+    public void gotStageAward(JsonNode waterResult, String cookie) {
+        long waterStatus = waterResult.get("waterStatus").asLong();
+        long treeEnergy = waterResult.get("treeEnergy").asLong();
+        if (waterStatus == 0 && treeEnergy == 10) {
+            System.out.println("果树发芽了,奖励30g水滴");
+            //
+            JsonNode gotStageAwardForFarmRes = gotStageAwardForFarm("1", cookie);
+            System.out.println("浇水阶段奖励1领取结果" + gotStageAwardForFarmRes);
+            String code = gotStageAwardForFarmRes.get("code").asText();
+            if ("0".equals(code)) {
+                System.out.println("果树发芽了,奖励" + gotStageAwardForFarmRes.get("addEnergy").asLong() + "g");
+            }
+        } else if (waterStatus == 1) {
+            System.out.println("果树开花了,奖励40g水滴");
+            JsonNode gotStageAwardForFarmRes = gotStageAwardForFarm("2", cookie);
+            System.out.println("浇水阶段奖励2领取结果" + gotStageAwardForFarmRes);
+            if ("0".equals(gotStageAwardForFarmRes.get("code").asText())) {
+                System.out.println("果树开花了,奖励" + gotStageAwardForFarmRes.get("addEnergy").asLong() + "g");
+            }
+        } else if (waterStatus == 2) {
+            System.out.println("果树长出小果子啦, 奖励50g水滴");
+            JsonNode gotStageAwardForFarmRes = gotStageAwardForFarm("3", cookie);
+            System.out.println("浇水阶段奖励3领取结果" + gotStageAwardForFarmRes);
+            if ("0".equals(gotStageAwardForFarmRes.get("code").asText())) {
+                System.out.println("果树结果了,奖励" + gotStageAwardForFarmRes.get("addEnergy").asLong() + "g");
+            }
+        }
+    }
+
+    public JsonNode gotStageAwardForFarm(String type, String cookie) {
+        try {
+            Thread.sleep(1000);
+            Map<String, Object> taskInitForFarm = taskGetUrl("gotStageAwardForFarm", URLEncoder.encode("{\"type\": \"" + type + "\"}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode gotStageAwardForFarmRes = objectMapper.readTree(res);
+            return gotStageAwardForFarmRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public JsonNode waterGoodForFarm(String cookie) {
+        try {
+            Thread.sleep(1000);
+            Map<String, Object> taskInitForFarm = taskGetUrl("waterGoodForFarm", URLEncoder.encode("{}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode waterResult = objectMapper.readTree(res);
+            return waterResult;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public JsonNode myCardInfoForFarm(String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("myCardInfoForFarm", URLEncoder.encode("{\"version\": 5, \"channel\": 1}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode myCardInfoRes = objectMapper.readTree(res);
+            return myCardInfoRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     //助力好友  暂时是从 自己配置的码助力 先不搞
@@ -93,7 +233,7 @@ public class jd_fruit extends abstract_jd_task {
             System.out.println("今天已经签到,连续签到" + totalSigned + ",下次签到可得" + signEnergyEachAmount + "g");
         }
         Boolean canPop = jsonNode.get("todayGotWaterGoalTask").get("canPop").asBoolean();
-        System.out.println("被水滴砸中： " + (canPop ? "是" : "fou"));
+        System.out.println("被水滴砸中： " + (canPop ? "是" : "否"));
         if (canPop) {
             JsonNode goalResult = gotWaterGoalTaskForFarm(cookie);
             long code = goalResult.get("code").asLong();
@@ -163,12 +303,181 @@ public class jd_fruit extends abstract_jd_task {
         if (!b1) {
             long waterFriendCountKey = farmTask.get("waterFriendTaskInit").get("waterFriendCountKey").asLong();
             long waterFriendMax = farmTask.get("waterFriendTaskInit").get("waterFriendMax").asLong();
-            doFriendsWater(cookie);
+            if (waterFriendCountKey < waterFriendMax) {
+                doFriendsWater(cookie);
+            }
+        } else {
+            System.out.println("给" + farmTask.get("waterFriendTaskInit").get("waterFriendMax").asLong() + "个好友浇水任务已完成");
+        }
+        //TODO
+        getAwardInviteFriend(cookie);
+        clockInIn(cookie);
+    }
+
+    ////打卡领水活动
+    public void clockInIn(String cookie) {
+        System.out.println("开始打卡领水活动（签到，关注，领券）");
+        JsonNode clockInInit = clockInInitForFarm(cookie);
+        String code = clockInInit.get("code").asText();
+        if ("0".equals(code)) {
+            // 签到得水滴
+            boolean todaySigned = clockInInit.get("todaySigned").asBoolean();
+            if (!todaySigned) {
+                System.out.println("开始今日签到");
+                JsonNode clockInForFarmRes = clockInForFarm(cookie);
+                System.out.println("打卡结果" + clockInForFarmRes);
+                String clockCode = clockInForFarmRes.get("code").asText();
+                if ("0".equals(clockCode)) {
+                    System.out.println("第" + clockInForFarmRes.get("signDay").asLong() + "天签到,获得" + clockInForFarmRes.get("amount").asLong() + "g");
+                    long signDay = clockInForFarmRes.get("signDay").asLong();
+                    if (signDay == 7) {
+                        //可以领取惊喜礼包
+                        System.out.println("开始领取--惊喜礼包38g水滴");
+                        JsonNode gotClockInGiftRes = gotClockInGift(cookie);
+                        String giftCode = gotClockInGiftRes.get("code").asText();
+                        if ("0".equals(giftCode)) {
+                            System.out.println("惊喜礼包,获得" + gotClockInGiftRes.get("amount").asLong() + "g");
+                        }
+                    }
+                }
+            }
+            long totalSigned = clockInInit.get("totalSigned").asLong();
+            if (todaySigned && totalSigned == 7) {
+                System.out.println("'开始领取--惊喜礼包38g水滴");
+                JsonNode gotClockInGiftRes = gotClockInGift(cookie);
+                String giftCode = gotClockInGiftRes.get("code").asText();
+                if ("0".equals(giftCode)) {
+                    System.out.println("惊喜礼包,获得" + gotClockInGiftRes.get("amount").asLong() + "g");
+                }
+            }
+            //限时关注得水滴
+            //TODO
         }
     }
 
-    ////给好友浇水
+    //领取连续签到7天的惊喜礼包API
+    public JsonNode gotClockInGift(String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("clockInForFarm", URLEncoder.encode("{\"type\": 2}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode gotClockInGiftRes = objectMapper.readTree(res);
+            return gotClockInGiftRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    //连续签到api
+    public JsonNode clockInForFarm(String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("clockInForFarm", URLEncoder.encode("{\"type\": 1}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode clockInForFarmRes = objectMapper.readTree(res);
+            return clockInForFarmRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    //打卡领水API
+    public JsonNode clockInInitForFarm(String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("clockInInitForFarm", URLEncoder.encode("{}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode clockInInit = objectMapper.readTree(res);
+            return clockInInit;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void doFriendsWater(String cookie) {
+        Set<String> needWaterFriends = new HashSet<>();
+        JsonNode friendList = friendListInitForFarm(cookie);
+        System.out.println("开始给好友浇水");
+        JsonNode farmTask = taskInitForFarm(cookie);
+        long waterFriendCountKey = farmTask.get("waterFriendTaskInit").get("waterFriendCountKey").asLong();
+        long waterFriendMax = farmTask.get("waterFriendTaskInit").get("waterFriendMax").asLong();
+        System.out.println("今日已给" + waterFriendCountKey + "个好友浇水");
+        if (waterFriendCountKey < waterFriendMax) {
+            if (!friendList.get("friends").isNull() && friendList.get("friends").size() > 0) {
+                Iterator<JsonNode> friends = friendList.get("friends").elements();
+                while (friends.hasNext()) {
+                    JsonNode next = friends.next();
+                    long friendState = next.get("friendState").asLong();
+                    if (friendState == 1) {
+                        if (needWaterFriends.size() < (waterFriendMax - waterFriendCountKey)) {
+                            String shareCode = next.get("shareCode").asText();
+                            needWaterFriends.add(shareCode);
+                        }
+                    }
+                }
+                try {
+                    System.out.println("需要浇水的好友列表shareCodes" + objectMapper.writeValueAsString(needWaterFriends));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                long waterFriendsCount = 0;
+                String cardInfoStr = "";
+                for (String needWaterFriend : needWaterFriends) {
+                    //为好友浇水
+                    JsonNode waterFriendForFarmRes = waterFriendForFarm(needWaterFriend, cookie);
+                    System.out.println("为好友浇水结果: " + waterFriendForFarmRes);
+                    String code = waterFriendForFarmRes.get("code").asText();
+                    if ("0".equals(code)) {
+                        waterFriendsCount++;
+                        if (!waterFriendForFarmRes.get("code").get("cardInfo").isNull()) {
+                            System.out.println("为好友浇水获得道具了");
+                            String type = waterFriendForFarmRes.get("code").get("cardInfo").get("type").asText();
+                            if ("beanCard".equals(type)) {
+                                String rule = waterFriendForFarmRes.get("code").get("cardInfo").get("rule").asText();
+                                System.out.println("水滴换豆卡" + rule);
+                            } else if ("fastCard".equals(type)) {
+                                String rule = waterFriendForFarmRes.get("code").get("cardInfo").get("rule").asText();
+                                System.out.println("快速浇水卡" + rule);
+                            } else if ("doubleCard".equals(type)) {
+                                String rule = waterFriendForFarmRes.get("code").get("cardInfo").get("rule").asText();
+                                System.out.println("水滴翻倍卡" + rule);
+                            } else if ("signCard".equals(type)) {
+                                String rule = waterFriendForFarmRes.get("code").get("cardInfo").get("rule").asText();
+                                System.out.println("加签卡" + rule);
+                            }
+                        }
+                    } else if ("11".equals(code)) {
+                        System.out.println("水滴不够,跳出浇水");
+                    }
+                }
+                System.out.println("好友浇水消耗: " + (waterFriendsCount * 100) + "g");
+            } else {
+                System.out.println("您的好友列表暂无好友,快去邀请您的好友吧!");
+            }
+        } else {
+            System.out.println("今日已为好友浇水量已达" + waterFriendMax);
+        }
+    }
+
+    ////为好友浇水API
+    public JsonNode waterFriendForFarm(String shareCode, String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("waterFriendForFarm", URLEncoder.encode(" {\"shareCode\": \"" + shareCode + "\", \"version\": 6, \"channel\": 1}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode waterFriendForFarmRes = objectMapper.readTree(res);
+            return waterFriendForFarmRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    ////给好友浇水
+    public void getAwardInviteFriend(String cookie) {
         //查询好友列表
         JsonNode friendList = friendListInitForFarm(cookie);
         if (friendList != null) {
@@ -190,15 +499,59 @@ public class jd_fruit extends abstract_jd_task {
                         }
                     }
                 }
-                //;//为他人助力,接受邀请成为别人的好友
+                //为他人助力,接受邀请成为别人的好友
+                receiveFriendInvite(cookie);
 
             }
         }
     }
 
     //接收成为对方好友的邀请
-    public void receiveFriendInvite() {
+    public void receiveFriendInvite(String cookie) {
+        shareCodeMap.forEach((k, v) -> {
+            if (!k.equals(cookie)) {
+                JsonNode inviteFriendRes = inviteFriend(v, cookie);
+                if (inviteFriendRes != null) {
+                    if (!inviteFriendRes.get("helpResult").isNull()) {
+                        String code = inviteFriendRes.get("helpResult").get("code").asText();
+                        if ("0".equals(code)) {
+                            String nickName = inviteFriendRes.get("helpResult").get("masterUserInfo").get("nickName").asText();
+                            System.out.println("接收邀请成为好友结果成功,您已成为" + nickName + "的好友");
+                        }
+                        if ("17".equals(code)) {
+                            System.out.println("接收邀请成为好友结果失败,对方已是您的好友");
+                        }
+                    }
+                }
+            }
+        });
+    }
 
+    public JsonNode inviteFriend(String shareCode, String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("initForFarm", URLEncoder.encode("{\"imageUrl\":\"\",\"nickName\":\"\",\"shareCode\":\"" + shareCode + "-inviteFriend\",\"version\":4,\"channel\":2}\n"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode awardInviteFriendRes = objectMapper.readTree(res);
+            return awardInviteFriendRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    //领取邀请好友的奖励API
+    public JsonNode awardInviteFriendForFarm(JsonNode friends, String cookie) {
+        try {
+            Map<String, Object> taskInitForFarm = taskGetUrl("awardInviteFriendForFarm", URLEncoder.encode("{}"), cookie);
+            String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
+            System.out.println(res);
+            JsonNode awardInviteFriendRes = objectMapper.readTree(res);
+            return awardInviteFriendRes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     //删除好友
@@ -301,8 +654,8 @@ public class jd_fruit extends abstract_jd_task {
         try {
             String res = HttpUtils.doGetHeaders((String) taskInitForFarm.get("url"), (Map<String, String>) taskInitForFarm.get("headers"));
             System.out.println(res);
-            JsonNode jsonNode = objectMapper.readTree(res);
-            return jsonNode;
+            JsonNode farmTask = objectMapper.readTree(res);
+            return farmTask;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -41,7 +41,8 @@ class ScfSpringbootJava8ApplicationTests {
 //		jd_speed_signfaker.cash("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 //		jd_fruit.initForFarm("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 //		jd_fruit.taskInitForFarm("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
-		jd_fruit.jdFruit("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+//		jd_fruit.jdFruit("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
+		jd_fruit.myCardInfoForFarm("pt_key=AAJhiS6TADD5CC8v8fWf63rYbm7ygR8BQT_jQen-j0uPDgvvGiDtvaedfbM_FUYBogoK1S1YLN0;pt_pin=jd_4918fa77c820d;");
 	}
 
 }
