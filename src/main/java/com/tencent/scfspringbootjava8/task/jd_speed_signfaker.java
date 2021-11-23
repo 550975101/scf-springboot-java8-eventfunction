@@ -59,7 +59,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
 
             taskList(cookie);
             queryJoy(cookie);
-            //cash()
+            cash(cookie);
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -71,10 +71,10 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("MyAssetsService.execute", "{\"method\": \"userCashRecord\", \"data\": {\"channel\": 1, \"pageNum\": 1, \"pageSize\": 20}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("cash: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long data = jsonNode.get("data").get("goldBalance").asLong();
-            System.out.println("data.goldBalance" + data);
+            System.out.println("data.goldBalance: " + data);
         } catch (Exception e) {
             System.out.println("API请求失败");
             e.printStackTrace();
@@ -86,9 +86,9 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\": \"queryJoyPage\", \"data\": {\"channel\": 1}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("queryJoy: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
-            if (!jsonNode.get("data").get("taskBubbles").isNull()) {
+            if (jsonNode.has("taskBubbles")) {
                 Iterator<JsonNode> elements = jsonNode.get("data").get("taskBubbles").elements();
                 while (elements.hasNext()) {
                     JsonNode next = elements.next();
@@ -109,7 +109,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"joyTaskReward\",\"data\":{\"id\":" + id + ",\"channel\":1,\"clientTime\":" + System.currentTimeMillis() + ",\"activeType\":" + activeType + "}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("rewardTask: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0) {
@@ -128,7 +128,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"version\":\"3.1.0\",\"method\":\"newTaskCenterPage\",\"data\":{\"channel\":1}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("taskList: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             Iterator<JsonNode> data = jsonNode.get("data").elements();
             while (data.hasNext()) {
@@ -164,7 +164,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"marketTaskRewardPayment\",\"data\":{\"channel\":1,\"clientTime\":" + System.currentTimeMillis() + ",\"activeType\":\"" + taskType + "\"}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("doTask: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0) {
@@ -185,7 +185,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"queryNextTask\",\"data\":{\"channel\":1,\"activeType\":\"" + taskType + "\"}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("queryItem: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0 && !jsonNode.get("data").isNull()) {
@@ -206,7 +206,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"enterAndLeave\",\"data\":{\"activeId\":\"" + nextResource + "\",\"clientTime\":" + System.currentTimeMillis() + ",\"channel\":\"1\",\"messageType\":\"1\",\"activeType\":" + taskType + "}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("startItem: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0 && !jsonNode.get("data").isNull()) {
@@ -242,7 +242,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"enterAndLeave\",\"data\":{\"channel\":\"1\",\"clientTime\":" + System.currentTimeMillis() + ",\"uuid\":\"" + uuid + "\",\"videoTimeLength\":" + videoBrowsing + ",\"messageType\":\"2\",\"activeType\":\"" + taskType + "\",\"activeId\":\"" + nextResource + "\"}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("endItem: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             boolean isSuccess = jsonNode.get("isSuccess").asBoolean();
@@ -262,7 +262,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("ClientHandleService.execute", "{\"method\":\"rewardPayment\",\"data\":{\"channel\":\"1\",\"clientTime\":" + System.currentTimeMillis() + ",\"uuid\":\"" + uuid + "\",\"videoTimeLength\":" + videoBrowsing + ",\"messageType\":\"2\",\"activeType\":" + taskType + ",\"activeId\":\"" + nextResource + "\"}}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("rewardItem: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             boolean isSuccess = jsonNode.get("isSuccess").asBoolean();
@@ -283,9 +283,10 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("richManIndex", "{\"actId\": \"hbdfw\", \"needGoldToast\": \"true\"}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
+            System.out.println("richManIndex: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
-            if (code == 0 && !jsonNode.get("data").isNull() && !jsonNode.get("data").get("userInfo").isNull()) {
+            if (code == 0 && jsonNode.has("data") && jsonNode.has("userInfo")) {
                 System.out.println("用户当前位置" + jsonNode.get("data").get("userInfo").get("position").asText() + "，剩余机会: " + jsonNode.get("data").get("userInfo").get("randomTimes").asLong());
                 long randomTimes = jsonNode.get("data").get("userInfo").get("randomTimes").asLong();
                 for (long i = 0; i < randomTimes; i++) {
@@ -302,6 +303,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         try {
             Map<String, Object> request = taskUrl("shootRichManDice", "{\"actId\": \"hbdfw\"}", cookie);
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
+            System.out.println("shootRichManDice: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             boolean data = jsonNode.get("data").isNull();
             boolean rewardType = jsonNode.get("data").get("rewardType").isNull();
@@ -328,7 +330,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         String res = null;
         try {
             res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("wheelsHome: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0) {
@@ -352,6 +354,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         Map<String, Object> request = taskGetUrl("wheelsLottery", URLEncoder.encode(body), cookie);
         try {
             String res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
+            System.out.println("wheelsLottery: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             if (!jsonNode.get("data").isNull()) {
                 if (!jsonNode.get("data").get("rewardType").isNull()) {
@@ -374,7 +377,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         Map<String, Object> request = taskGetUrl("apTaskList", URLEncoder.encode(body), cookie);
         try {
             String res = HttpUtils.doGetHeaders((String) request.get("url"), (Map<String, String>) request.get("headers"));
-            System.out.println(res);
+            System.out.println("apTaskList: "+res);
             JsonNode jsonNode = objectMapper.readTree(res);
             long code = jsonNode.get("code").asLong();
             if (code == 0) {
@@ -427,7 +430,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         headers.put("Accept-Encoding", "gzip, deflate, br");
         headers.put("Cookie", cookie);
         String res = HttpUtils.doPost(url, headers, body);
-        System.out.println(res);
+        System.out.println("invite: "+res);
     }
 
     public void invite2(String cookie) {
@@ -452,7 +455,7 @@ public class jd_speed_signfaker extends abstract_jd_task {
         headers.put("Accept-Encoding", "gzip, deflate, br");
         headers.put("Cookie", cookie);
         String res = HttpUtils.doPost(url, headers, body);
-        System.out.println(res);
+        System.out.println("invite2: "+res);
     }
 
     private void apDoTask(String taskType, long id, int i, String taskSourceUrl, String cookie) {

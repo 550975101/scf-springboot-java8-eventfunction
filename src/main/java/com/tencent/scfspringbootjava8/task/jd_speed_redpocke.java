@@ -148,9 +148,9 @@ public class jd_speed_redpocke extends abstract_jd_task {
       JsonNode jsonNode = objectMapper.readTree(res);
       long code = jsonNode.get("code").asLong();
       if (code == 0) {
-        long prizeType = jsonNode.get("received").get("prizeType").asLong();
+        long prizeType = jsonNode.get("data").get("received").get("prizeType").asLong();
         if (prizeType != 1) {
-          System.out.println("获得: " + jsonNode.get("received").get("prizeDesc"));
+          System.out.println("获得: " + jsonNode.get("data").get("received").get("prizeDesc"));
         } else {
           System.out.println("获得优惠券");
         }
